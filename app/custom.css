@@ -1,4 +1,8 @@
-.grid-group-main{
+.grid-group-main, .grouped-grid-arrangement{
 	display: grid;
 	grid-template-columns: 1fr 2fr 1fr;
+}
+
+.grouped-grid-arrangement{
+   grid-template-columns: 3fr 1fr;
 }
