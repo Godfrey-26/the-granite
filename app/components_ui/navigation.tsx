@@ -4,8 +4,8 @@ import { Menu, Search } from 'lucide-react'
 export default function Navigation(){
 	const navItems = {home:"Home", news:"News", sport:"Sport", business:"Business", entertainment:"Entertainment"}
 	return(
-          <div className="container mx-auto md:container md:mx-auto py-8 divide-y divide-gray-500">
-          	  <nav className="grid grid-cols-1 divide-y divide-gray-500">
+          <div className=" sticky top-0 z-50 bg-white px-3 py-8 divide-y divide-gray-500" >
+          	  <nav className="px-3 grid grid-cols-1 divide-y divide-gray-500">
           	    {/*Logo*/}
           	  	<div className="top-section grid-group-main">
 
@@ -18,7 +18,7 @@ export default function Navigation(){
           	  		  </div>
                   {/*Branding*/}
                   
-          	  		  <Link href={Object.keys(navItems)[0]} className="px-8 text-4xl text-center">The Granite</Link>
+          	  		  <Link href={Object.keys(navItems)[0]} className="px-8 text-4xl text-center font-bold">The Granite</Link>
           	  		
                   {/*Register and signin button*/}
                   <div className="top-section-buttons grid-cols-2 ">

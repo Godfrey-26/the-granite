@@ -6,3 +6,6 @@
 .grouped-grid-arrangement{
    grid-template-columns: 3fr 1fr;
 }
+.black-48{
+	background: rgba(0, 0, 0, 0.48);
+}
