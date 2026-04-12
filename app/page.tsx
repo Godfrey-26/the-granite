@@ -3,7 +3,8 @@ import Footer from "./components_ui/footer"
 import Content from "./components_ui/content"
 import LandingPage from "./pages/landing"
 
-export default function Home() {
+
+export default async function Home() {
     
    return(
     <>

@@ -2,8 +2,11 @@
  * This is the landing or home page 
  * has mixed contents such as breaking, trending and all random stories making the headlines
  * */
+"use client"
+import {useState, useEffect} from "react"
 import Image from 'next/image'
 import Link from 'next/link'
+import API_Caller from "@src/api_caller"
 /**
  * Truncate text
  * 
@@ -13,7 +16,30 @@ function truncate(text: string, limit: number){
 }
 export default function LandingPage()
 {
-
+   const [topStories, setTopStories] = useState([])
+   const [loading, setLoading] = useState(true)
+   const [error, setError] = useState(null)
+   // call the api
+   /**
+    * Get the top stories
+    * */
+   useEffect(()=>{
+      API_Caller('GET', null, '/articles/top-stories/')
+      .then(data=>{
+         console.log(data)
+         setTopStories(data)
+         setLoading(false)
+      })
+      .catch(err =>{
+         setError(err.message)
+         setLoading(false)
+      } )
+   }, [])
+   
+   
+   /**
+    * Get features
+    * */
 	return(
           <main className="main-wrapper grid grid-cols-1 gap-4 p-3 divide-y divide-gray-500">
           	 {/*Breaking news*/}
@@ -139,12 +165,15 @@ export default function LandingPage()
              {/*Trending or top stories*/}
              <div className="">
                   <div className="px-3 pt-6">
-                      <h2 className="text-xl">Trending</h2>
+                      <h2 className="text-xl">Top Stories</h2>
+                      {topStories.map((item)=>(
+                         <div>Check this {item.article.title}</div>
+                       ))}
                   </div>
                   <div className="grouped-grid-arrangement">
                {/*dynamic grid arrangement*/}
                 <div className="grid grid-cols-1 gap-4">
-
+                    
                    <div className="card px-3 pt-6 grid grid-cols-2">
                      
                      <div className="card-context">
