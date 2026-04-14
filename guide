@@ -1,0 +1,3057 @@
+DELETE /api/v1/accounts/bookmarks/<article
+-
+slug>/
+
+// Duplicate → HTTP 409
+
+```
+
+`BookmarkButton`
+ 
+is a cli
+ent component. Use SWR with optimistic update.
+
+### 9.6 Reading History
+
+```ts
+
+POST /api/v1/accounts/history/ → {
+ 
+"article_slug"
+:
+ 
+"slug"
+ 
+}
+
+GET
+ 
+/api/v1/accounts/history/
+
+DELETE /api/v1/accounts/history/
+ 
+// clear all
+
+```
+
+Fire the POST in a client effe
+ct on article detail pages (reader
+-
+only, skip if
+
+not logged in).
+
+---
+
+## 10. Subscription & Paywall
+
+### 10.1 Plan Listing (
+`/subscribe`
+)
+
+```ts
+
+const
+ 
+plans =
+ 
+await
+
+getPublic<SubscriptionPlan[]>(
+"/api/v1/subscriptions/plans/"
+);
+
+```
+
+Display: name, price, billing period, features list, CTA button.
+
+### 10.2 Reader Subscription Status
+
+```ts
+
+GET /api/v1/subscriptions/my
+-
+subscription/
+
+// 404 = no subscription
+
+```
+
+Use to gate premium content display.
+
+### 10.3 Subscribe Flow
+
+```ts
+
+POST /api/v1/subscriptions/subscribe/
+
+{
+"plan_slug"
+:
+ 
+"premium"
+,
+
+"payment_method"
+:
+ 
+"ecocash"
+,
+
+"phone_number"
+:
+ 
+"+263771234567"
+
+}
+
+```
+
+Payment methods:
+ 
+`ecocash`
+,
+ 
+`onemoney`
+,
+ 
+`bank_card`
+,
+ 
+`bank_transfer`
+.
+
+**Free plan**
+ 
+→ activates immediately.
+
+**Paid plan**
+ 
+→ client
+-
+side Paynow flow:
+
+1.
+ 
+POST subscribe
+ 
+—
+ 
+get back
+ 
+`redirect_url`
+ 
+and
+ 
+`poll_url`
+.
+
+2.
+ 
+Redirect reader to
+ 
+`redirect_url`
+ 
+(Paynow payment page).
+
+3.
+ 
+Poll
+ 
+`GET /api/v1/subscriptions/paynow
+-
+poll/<payment
+-
+id>/`
+ 
+every 3
+–
+5 seconds.
+
+4.
+ 
+When
+ 
+`paid:
+ 
+true`
+, update paywall state and reload subscription status.
+
+### 10.4 Cancel
+
+```ts
+
+POST /api/v1/subscriptions/cancel/
+
+{
+ 
+"cancel_immediately"
+:
+ 
+false
+ 
+}
+
+```
+
+### 10.5 Payment History
+
+```ts
+
+GET /api/v1/subscriptions/payments/
+
+// Paginated. Fields: amoun
+t_usd, currency, payment_method_label, status_label,
+
+created_at
+
+```
+
+---
+
+## 11. Staff CMS
+
+### 11.1 Login (
+`/cms/login`
+)
+
+POST to your Route Handler
+ 
+`/api/auth/login`
+:
+
+-
+ 
+Proxies to
+ 
+`/api/v1/auth/token/`
+
+-
+ 
+Sets
+ 
+`granite_staff_session`
+ 
++
+ 
+`granite_staff_refresh`
+ 
+httpOnly cookies
+
+-
+ 
+Returns
+ 
+`user`
+ 
+object → store in React context or Zustand
+
+### 11.2 Middleware Protection
+The middleware in
+ 
+`src/middleware.ts`
+ 
+redirects all
+ 
+`/cms/*`
+ 
+(except
+
+`/cms/login`
+) to
+ 
+`/cms/login`
+ 
+if
+ 
+`granite_staff_ses
+sion`
+ 
+cookie is absent.
+
+### 11.3 Article Management
+
+```ts
+
+// List (staff sees all statuses)
+
+GET
+ 
+/api/v1/articles/?status=draft&page=
+1
+
+// Create
+
+POST /api/v1/articles/
+
+// Edit
+
+GET
+ 
+/api/v1/articles/<slug>/
+
+PATCH /api/v1/articles/<slug>/
+
+// Archive (soft delete)
+
+DELETE /api/v1/articles/<slug>/
+
+```
+
+Writable fields:
+ 
+`title`
+,
+ 
+`excerpt`
+,
+ 
+`body`
+,
+ 
+`status`
+,
+ 
+`category`
+,
+ 
+`tags`
+,
+
+`is_breaking`
+,
+ 
+`top_story_rank`
+,
+ 
+`featured_rank`
+,
+ 
+`image_url`
+,
+ 
+`image_alt`
+,
+
+`image_caption`
+,
+ 
+`image_credit`
+,
+ 
+`og_title
+`
+,
+ 
+`og_description`
+,
+ 
+`og_image_url`
+,
+
+`canonical_url`
+.
+
+Status flow:
+ 
+`draft → review → published → archived`
+.
+
+**Important:**
+ 
+`DELETE`
+ 
+archives the article
+ 
+—
+ 
+it does not hard delete.
+
+### 11.4 Media Library
+
+```ts
+
+// List
+
+GET /api/v1/media/
+
+// Upload (multipart)
+
+POST /api/v1/media/
+ 
+form fields: file, alt_text, caption, credit
+
+// Delete
+
+DELETE /api/v1/media/<id>/
+
+```
+
+Constraints: JPEG / PNG / WebP only, max 10 MB, min 800px width.
+
+### 11.5 Comment Moderation
+```ts
+
+GET
+ 
+/api/v1/moderation/comments/?status=pending
+
+PATCH /api/v1/moderation/comments/<id>/
+
+{
+ 
+"action"
+:
+ 
+"approve"
+ 
+}
+ 
+// or "reject"
+
+```
+
+### 11.6 Staff Management
+
+```ts
+
+GET
+ 
+/api/v1/staff/
+
+POST
+ 
+/api/v1/staff/
+
+GET
+ 
+/api/v1/staff/<id>/
+
+PATCH
+ 
+/api/v1/staff
+/<id>/
+
+DELETE /api/v1/staff/<id>/
+
+```
+
+Roles (ascending):
+ 
+`contributor`
+,
+ 
+`author`
+,
+ 
+`moderator`
+,
+ 
+`editor`
+,
+
+`senior_editor`
+,
+ 
+`admin`
+.
+
+Only
+ 
+`senior_editor`
+ 
+and
+ 
+`admin`
+ 
+can access staff management endpoints.
+
+### 11.7 Newsletter Subscribers
+
+```ts
+
+GET /ap
+i/v1/newsletter/subscribers/?confirmed=all
+
+// confirmed=true | false | all
+
+```
+
+### 11.8 Advertising Dashboard
+
+```ts
+
+GET
+ 
+/api/v1/ads/campaigns/
+
+POST
+ 
+/api/v1/ads/campaigns/
+
+GET
+ 
+/api/v1/ads/campaigns/<id>/
+
+PATCH
+ 
+/api/v1/ads/campaigns/<id>/
+
+GET
+ 
+/api/v1/ads/advertisers/
+
+POST
+ 
+/api/v1/ads/advertisers/
+
+GET
+ 
+/api/v1/ads/report/<campaign
+-
+id>/
+
+```
+
+Editor role or above required.
+
+### 11.9 Revenue Dashboard
+```ts
+
+GET /api/v1/subscriptions/all/
+
+GET /api/v1/subscriptions/revenue/
+
+```
+
+---
+
+## 12
+. Shared Components
+
+| Component | Location | Notes |
+
+|
+---
+|
+---
+|
+---
+|
+
+|
+ 
+`<ArticleCard>`
+ 
+|
+ 
+`components/site/`
+ 
+| Used in lists, grids, featured rows |
+
+|
+ 
+`<BreakingBanner>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client
+ 
+—
+ 
+polls or ISR |
+
+|
+ 
+`<TopStoriesGrid>`
+ 
+|
+ 
+`components/site/
+`
+ 
+| 6
+-
+slot grid,
+ 
+`rank`
+ 
+ordering |
+
+|
+ 
+`<CommentThread>`
+ 
+|
+ 
+`components/site/`
+ 
+| Server
+-
+fetched, client form |
+
+|
+ 
+`<CommentForm>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client
+ 
+—
+ 
+POST with rate
+-
+limit awareness
+
+|
+
+|
+ 
+`<NewsletterSignup>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client form, source field |
+
+|
+ 
+`<Pagination>`
+ 
+|
+ 
+`components/site/`
+ 
+| Reads
+ 
+`total_pages`
+,
+ 
+`current_page`
+ 
+|
+
+|
+ 
+`<AdSlot>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client
+ 
+—
+ 
+impression + click tracking |
+
+|
+ 
+`<BookmarkButton>`
+ 
+|
+ 
+`components/reader/`
+ 
+| Client, SWR optimistic |
+
+|
+ 
+`<ArticleEditor>`
+ 
+|
+ 
+`components/staff/`
+ 
+| Rich text, media picker, status
+
+picker |
+
+|
+ 
+`<StatusBadge>`
+ 
+|
+ 
+`components/staff/`
+ 
+| Color
+-
+coded:
+
+draft/review/published/archived |
+
+---
+
+## 13. SEO & Meta
+
+Every public page must implement
+ 
+`generateMetadata`
+:
+
+`
+``ts
+
+export
+ 
+async
+ 
+function
+ 
+generateMetadata({ params }): Promise<Metadata> {
+
+const
+ 
+article =
+ 
+await
+
+getPublic<ArticleDetail>(
+`/api/v1/articles/
+${
+params.slug
+}
+/`
+);
+
+return
+ 
+{
+
+title: article.seo_title || article.title,
+
+description: article.seo_descri
+ption || article.excerpt,
+
+openGraph: {
+
+title: article.og_title || article.title,
+
+description: article.og_description,
+
+images: [article.resolved_og_image],
+
+type:
+ 
+"article"
+,
+
+publishedTime: article.published_at ??
+},
+
+twitter: { card:
+ 
+"summary_large_image"
+ 
+},
+
+alternates: { canonical: article.canonical_url },
+
+};
+
+}
+
+```
+
+**OG image minimum:**
+ 
+1200×630px
+ 
+—
+ 
+enforce this when accepting uploads in the
+
+CMS.
+
+**JSON
+-
+LD NewsArticle**
+ 
+—
+ 
+add to article detail page:
+
+```tsx
+
+<
+script
+
+type
+=
+"application/ld+json"
+
+dangerouslySetInnerHTML
+=
+{
+{
+
+__html: JSON.stringify({
+
+"@context"
+:
+ 
+"https://schema.org"
+,
+
+"@type"
+:
+ 
+"NewsArticle"
+,
+
+"headline"
+: article.title,
+
+"image"
+: [article.resolved_og_image],
+
+"datePublished"
+: article.published_at,
+
+"dateModified"
+: article.updated_at,
+
+"author"
+: {
+ 
+"@type"
+:
+ 
+"Person"
+,
+ 
+"name"
+: article.author_name },
+
+}),
+
+}
+}
+
+/>
+
+```
+
+**WhatsApp preview**
+ 
+requires
+ 
+`og:image`
+ 
+rendere
+d server
+-
+side
+ 
+—
+ 
+Next.js App
+
+Router does this automatically via
+ 
+`generateMetadata`
+.
+
+---
+
+## 14. Advertising Integration
+
+### 14.1 Fetch zone data (server component)
+
+```ts
+
+const
+ 
+zone =
+ 
+await
+ 
+getPublic<AdZone>(
+"/api/v1/ads/zones/homepage
+-
+leaderboard/"
+);
+
+// Zone results are cached 60s on the backend
+ 
+—
+ 
+short ISR on the frontend is fine
+
+```
+
+### 14.2
+```tsx
+
+"use client"
+;
+
+import
+ 
+{ useEffect }
+ 
+from
+ 
+"react"
+;
+
+export
+ 
+function
+ 
+AdSlot({ campaign }: { campaign: AdCampaign }) {
+
+use
+Effect(()
+ 
+=>
+ 
+{
+
+// Fire impression when visible (use IntersectionObserver in production)
+
+fetch(
+
+`
+${
+process.env.NEXT_PUBLIC_API_BASE_URL
+}${
+campaign.impression_tracking_url
+}
+
+`
+,
+
+{ method:
+ 
+"POST"
+ 
+}
+
+);
+
+}, [campaign.impression_tracking_url]);
+
+async
+ 
+function
+ 
+handleClick() {
+
+const
+ 
+res =
+ 
+await
+ 
+fetch(
+
+`
+${
+process.env.NEXT_PUBLIC_API_BASE_URL
+}${
+campaign.click_tracking_url
+}
+`
+,
+
+{ method:
+ 
+"POST"
+ 
+}
+
+);
+
+const
+ 
+data =
+ 
+await
+ 
+res.json();
+
+if
+ 
+(data.redirect_url) window.open(data.redirect_url,
+ 
+"_blank"
+,
+ 
+"noopener"
+);
+
+}
+
+return
+ 
+(
+
+<
+a
+ 
+onClick
+=
+{
+handleClick
+}
+ 
+style
+=
+{
+{ cursor:
+ 
+"pointer"
+ 
+}
+}
+>
+
+<
+img
+ 
+src
+=
+{
+campaign.creative_url
+}
+ 
+alt
+=
+{
+campaign.name
+}
+ 
+/>
+
+</
+a
+>
+
+);
+
+}
+
+```
+
+**Rules:**
+
+-
+ 
+Tracking URLs in the zone response are relative paths
+ 
+—
+ 
+prepend
+
+`NEXT_PUBLIC_API_BASE_URL`
+.
+
+-
+ 
+Never expose the raw
+ 
+`click_url`
+ 
+directly
+ 
+—
+ 
+always go through the tracking
+
+endpoint first.
+
+-
+ 
+Staff impressions are not counted by the backend.
+
+---
+
+## 15. Push
+ 
+Notifications
+
+```ts
+
+// 1. Get VAPID public key
+
+GET /api/v1/notifications/vapid
+// Returns 503 if push is not configured
+
+// 2. Subscribe browser
+
+const
+ 
+reg =
+ 
+await
+ 
+navigator.serviceWorker.ready;
+
+const
+ 
+sub =
+ 
+await
+ 
+reg.pushManager.subscribe({
+
+userVisibleOnly:
+ 
+true
+,
+
+applicationServerKey: vapidKey,
+
+});
+
+// 3. Send to backend
+
+POST /api/v1/notifications/subscribe/
+
+{
+
+"endpoint"
+: sub.endpoint,
+
+"p256dh"
+: base64encode(sub.getKey(
+"p256dh"
+)),
+
+"auth"
+: base64encode(sub.getKey(
+"auth"
+)),
+
+"user_a
+gent"
+: navigator.userAgent
+
+}
+
+// 4. Unsubscribe
+
+POST /api/v1/notifications/unsubscribe/
+
+```
+
+Put the permission flow behind a user action (button click)
+ 
+—
+ 
+browsers block
+
+auto
+-
+prompts.
+
+---
+
+## 16. Build Order
+
+### Phase 1
+ 
+—
+ 
+Foundation
+
+-
+ 
+[ ] Project scaffold + env vars
+
+-
+ 
+[ ] API client layer (
+`public.ts`
+,
+ 
+`reader.ts`
+,
+ 
+`staff.ts`
+, error handler)
+
+-
+ 
+[ ] TypeScript types (
+`types.ts`
+)
+
+-
+ 
+[ ] Site layout:
+ 
+`<Header>`
+,
+ 
+`<NavBar>`
+ 
+(sections),
+ 
+`<Footer>`
+
+### Phase 2
+ 
+—
+ 
+Public Site
+
+-
+ 
+[ ] Homepage: breaking banner, top stories grid, featured row, latest feed
+
+-
+ 
+[ ] Article detail: server fetch, OG meta, JSON
+-
+LD, analytics tracker
+
+-
+ 
+[ ] Category pages
+
+-
+ 
+[ ] Tag pages
+
+-
+ 
+[ ] Section pages
+
+-
+ 
+[ ] Author list + author detail
+
+-
+ 
+[ ] Search page
+ 
+with highlight rendering
+
+-
+### Phase 3
+ 
+—
+ 
+Reader Auth & Account
+
+-
+ 
+[ ] Reader register + email verification flow
+
+-
+ 
+[ ] Reader login / logout Route Handlers + cookies
+
+-
+ 
+[ ] Account profile page + edit form
+
+-
+ 
+[ ] Bookmarks page +
+ 
+`
+<BookmarkButton>`
+
+-
+ 
+[ ] Reading history page
+
+### Phase 4
+ 
+—
+ 
+Subscriptions
+
+-
+ 
+[ ] Plan listing page (
+`/subscribe`
+)
+
+-
+ 
+[ ] Subscribe form (payment method selector)
+
+-
+ 
+[ ] Paynow poll loop
+
+-
+ 
+[ ] Reader subscription status page
+
+-
+ 
+[ ] Payment history
+
+### Phase 5
+ 
+—
+ 
+Advertising
+
+-
+ 
+[ ]
+ 
+`<AdSlot>`
+ 
+component with impression tracking
+
+-
+ 
+[ ] Click tracking + redirect
+
+-
+ 
+[ ] Zone slots on homepage, article detail
+
+### Phase 6
+ 
+—
+ 
+Staff CMS
+
+-
+ 
+[ ] CMS login + cookie session + middleware guard
+
+-
+ 
+[ ] CMS dashboard (he
+adline stats)
+
+-
+ 
+[ ] Article list (filter by status)
+
+-
+ 
+[ ] Article create/edit form with
+ 
+`<ArticleEditor>`
+
+-
+ 
+[ ] Media library + upload
+
+-
+ 
+[ ] Comment moderation queue
+
+-
+ 
+[ ] Newsletter subscriber list
+
+-
+ 
+[ ] Advertising dashboard (campaigns + advertisers + reports)
+
+-
+ 
+[ ] Subscription revenue view
+
+-
+ 
+[ ] Staff management
+
+### Phase 7
+ 
+—
+ 
+Polish
+
+-
+ 
+[ ] Push notification subscription flow
+
+-
+ 
+[ ] ISR tuning (
+`revalidate`
+ 
+values per page type)
+
+-
+ 
+[ ] Error boundarie
+s + fallback UIs for API failures
+
+-
+ 
+[ ] Rate
+-
+limit UI feedback (
+`retry_after_seconds`
+)
+
+-
+ 
+[ ] Accessibility audit
+
+-
+ 
+[ ] Lighthouse / Core Web Vitals pass
+
+---
+
+## 17. Deployment Checklist
+
+-
+ 
+[ ] All env vars set in Vercel project settings
+
+-
+-
+ 
+[ ]
+ 
+`NEXT_PUBLIC_SITE_URL`
+ 
+matches production domain
+
+-
+ 
+[ ]
+ 
+`CORS_ALLOWED_ORIGINS`
+ 
+on backend includes production frontend URL
+
+-
+ 
+[ ] Cookie
+ 
+`secure: true`
+ 
+in production Route Handlers
+
+-
+ 
+[
+ 
+] OG images confirmed ≥1200×630px
+
+-
+ 
+[ ]
+ 
+`generateMetadata`
+ 
+on every public page
+
+-
+ 
+[ ] JSON
+-
+LD on article detail pages
+
+-
+ 
+[ ]
+ 
+`robots.txt`
+ 
+not blocking crawlers
+
+-
+ 
+[ ] Sitemap links to
+ 
+`/sitemap.xml`
+ 
+and
+ 
+`/feed/`
+ 
+working from backend
+
+-
+ 
+[ ] WhatsApp share prev
+iew tested (
+`og:image`
+ 
+resolves publicly)
+
+-
+ 
+[ ] Paynow polling tested end
+-
+to
+-
+end in staging
+
+-
+ 
+[ ] Ad impression/click tracking verified (not double
+-
+counting)
+
+-
+ 
+[ ] Staff login smoke test: correct role shown, CMS accessible
+
+-
+ 
+[ ] Reader login smoke test: bookmarks and history working
+
+---
+
+## Source of Truth Order
+
+When API behavior is unclear:
+
+1.
+ 
+`http://127.0.0.1:8000/api/docs/`
+ 
+—
+ 
+Swagger (live)
+
+2.
+ 
+`http://127.0.0.1:8000/api/schema/`
+ 
+—
+ 
+OpenAPI JSON
+
+3.
+ 
+`postman/TheGranite
+API.postman_collection.json`
+
+4.
+ 
+`docs/NEXTJS_FRONTEND_GUIDE.md`
+ 
+—
+ 
+endpoint reference
+
+5.
+ 
+`docs/ADVERTISING_FRONTEND_GUIDE.md`
+ 
+—
+ 
+ad
+-
+specific contract
+
+## 10. Subscription & Paywall
+
+### 10.1 Plan Listing (
+`/subscribe`
+)
+
+```ts
+
+const
+ 
+plans =
+ 
+await
+
+getPublic<SubscriptionPlan[]>(
+"/api/v1/subscriptions/plans/"
+);
+
+```
+
+Display: name, price, billing period, features list, CTA button.
+
+### 10.2 Reader Subscription Status
+
+```ts
+
+GET /api/v1/subscriptions/my
+-
+subscription/
+
+// 404 = no subscription
+
+```
+
+Use to gate premium content display.
+
+### 10.3 Subscribe Flow
+
+```ts
+
+POST /api/v1/subscriptions/subscribe/
+
+{
+
+"plan_slug"
+:
+ 
+"premium"
+,
+
+"payment_method"
+:
+ 
+"ecocash"
+,
+
+"phone_number"
+:
+ 
+"+263771234567"
+
+}
+
+```
+
+Payment methods:
+ 
+`ecocash`
+,
+ 
+`onemoney`
+,
+ 
+`bank_card`
+,
+ 
+`bank_transfer`
+.
+
+**Free plan**
+ 
+→ activates immediately.
+
+**Paid plan**
+ 
+→ client
+-
+side Paynow flow:
+
+1.
+ 
+POST subscribe
+ 
+—
+ 
+get back
+ 
+`redirect_url`
+ 
+and
+ 
+`poll_url`
+.
+
+2.
+ 
+Redirect reader to
+ 
+`redirect_url`
+ 
+(Paynow payment page).
+
+3.
+ 
+Poll
+ 
+`GET /api/v1/subscriptions/paynow
+-
+poll/<payment
+-
+id>/`
+ 
+every 3
+–
+5 seconds.
+
+4.
+ 
+When
+ 
+`paid:
+ 
+true`
+, update paywall state and reload subscription status.
+
+### 10.4 Cancel
+
+```ts
+
+POST /api/v1/subscriptions/cancel/
+{
+ 
+"cancel_immediately"
+:
+ 
+false
+ 
+}
+
+```
+
+### 10.5 Payment History
+
+```ts
+
+GET /api/v1/subscriptions/payments/
+
+// Paginated. Fields: amoun
+t_usd, currency, payment_method_label, status_label,
+
+created_at
+
+```
+
+---
+
+## 11. Staff CMS
+
+### 11.1 Login (
+`/cms/login`
+)
+
+POST to your Route Handler
+ 
+`/api/auth/login`
+:
+
+-
+ 
+Proxies to
+ 
+`/api/v1/auth/token/`
+
+-
+ 
+Sets
+ 
+`granite_staff_session`
+ 
++
+ 
+`granite_staff_refresh`
+ 
+httpOnly cookies
+
+-
+ 
+Returns
+ 
+`user`
+ 
+object → store in React context or Zustand
+
+### 11.2 Middleware Protection
+
+The middleware in
+ 
+`src/middleware.ts`
+ 
+redirects all
+ 
+`/cms/*`
+ 
+(except
+
+`/cms/login`
+) to
+ 
+`/cms/login`
+ 
+if
+ 
+`granite_staff_ses
+sion`
+ 
+cookie is absent.
+
+### 11.3 Article Management
+
+```ts
+
+// List (staff sees all statuses)
+
+GET
+ 
+/api/v1/articles/?status=draft&page=
+1
+
+// Create
+
+POST /api/v1/articles/
+
+// Edit
+
+GET
+ 
+/api/v1/articles/<slug>/
+
+PATCH /api/v1/articles/<slug>/
+
+// Archiv
+e (soft delete)
+
+DELETE /api/v1/articles/<slug>/
+
+```
+Writable fields:
+ 
+`title`
+,
+ 
+`excerpt`
+,
+ 
+`body`
+,
+ 
+`status`
+,
+ 
+`category`
+,
+ 
+`tags`
+,
+
+`is_breaking`
+,
+ 
+`top_story_rank`
+,
+ 
+`featured_rank`
+,
+ 
+`image_url`
+,
+ 
+`image_alt`
+,
+
+`image_caption`
+,
+ 
+`image_credit`
+,
+ 
+`og_title`
+,
+ 
+`og_de
+scription`
+,
+ 
+`og_image_url`
+,
+
+`canonical_url`
+.
+
+Status flow:
+ 
+`draft → review → published → archived`
+.
+
+**Important:**
+ 
+`DELETE`
+ 
+archives the article
+ 
+—
+ 
+it does not hard delete.
+
+### 11.4 Media Library
+
+```ts
+
+// List
+
+GET /api/v1/media/
+
+// Upload (multipart)
+
+POST /api/v1/media/
+ 
+form fields: file, alt_text, caption, credit
+
+// Delete
+
+DELETE /api/v1/media/<id>/
+
+```
+
+Constraints: JPEG / PNG / WebP only, max 10 MB, min 800px width.
+
+### 11.5 Comment Moderation
+
+```ts
+
+GET
+ 
+/api/v1/modera
+tion/comments/?status=pending
+
+PATCH /api/v1/moderation/comments/<id>/
+
+{
+ 
+"action"
+:
+ 
+"approve"
+ 
+}
+ 
+// or "reject"
+
+```
+
+### 11.6 Staff Management
+
+```ts
+
+GET
+ 
+/api/v1/staff/
+
+POST
+ 
+/api/v1/staff/
+
+GET
+ 
+/api/v1/staff/<id>/
+
+PATCH
+ 
+/api/v1/staff/<id>/
+
+DELETE /api/v1/staff/<id>/
+
+```
+
+Roles (ascending):
+ 
+`contributor`
+,
+ 
+`author`
+,
+ 
+`moderator`
+,
+ 
+`editor`
+,
+
+`senior_editor`
+Only
+ 
+`senior_editor`
+ 
+and
+ 
+`admin`
+ 
+can access staff management endpoints.
+
+### 11.7 Newsletter Subscribers
+
+```ts
+
+GET /api/v1/ne
+wsletter/subscribers/?confirmed=all
+
+// confirmed=true | false | all
+
+```
+
+### 11.8 Advertising Dashboard
+
+```ts
+
+GET
+ 
+/api/v1/ads/campaigns/
+
+POST
+ 
+/api/v1/ads/campaigns/
+
+GET
+ 
+/api/v1/ads/campaigns/<id>/
+
+PATCH
+ 
+/api/v1/ads/campaigns/<id>/
+
+GET
+ 
+/api/v
+1/ads/advertisers/
+
+POST
+ 
+/api/v1/ads/advertisers/
+
+GET
+ 
+/api/v1/ads/report/<campaign
+-
+id>/
+
+```
+
+Editor role or above required.
+
+### 11.9 Revenue Dashboard
+
+```ts
+
+GET /api/v1/subscriptions/all/
+
+GET /api/v1/subscriptions/revenue/
+
+```
+
+---
+
+## 12. Shared Components
+
+| Component | Location | Notes |
+
+|
+---
+|
+---
+|
+---
+|
+
+|
+ 
+`<ArticleCard>`
+ 
+|
+ 
+`components/site/`
+ 
+| Used in lists, grids, featured rows |
+
+|
+ 
+`<BreakingBanner>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client
+ 
+—
+ 
+polls or ISR |
+
+|
+ 
+`<TopStoriesGrid>`
+ 
+|
+ 
+`components/
+site/`
+ 
+| 6
+-
+slot grid,
+ 
+`rank`
+ 
+ordering |
+
+|
+ 
+`<CommentThread>`
+ 
+|
+ 
+`components/site/`
+ 
+| Server
+-
+fetched, client form |
+
+|
+ 
+`<CommentForm>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client
+ 
+—
+ 
+POST with rate
+-
+limit awareness
+
+|
+
+|
+ 
+`<NewsletterSignup>`
+ 
+|
+ 
+`components/site/`
+ 
+| Client form, s
+ource field |
+
+|
+ 
+`<Pagination>`
+ 
+|
+ 
+`components/site/`
+ 
+| Reads
+ 
+`total_pages`
+,
+ 
+`current_page`
+ 
+|
+
+|
+|
+ 
+`<BookmarkButton>`
+ 
+|
+ 
+`components/reader/`
+ 
+| Client, SWR optimistic |
+
+|
+ 
+`<ArticleEditor>
+`
+ 
+|
+ 
+`components/staff/`
+ 
+| Rich text, media picker, status
+
+picker |
+
+|
+ 
+`<StatusBadge>`
+ 
+|
+ 
+`components/staff/`
+ 
+| Color
+-
+coded:
+
+draft/review/published/archived |
+
+---
+
+## 13. SEO & Meta
+
+Every public page must implement
+ 
+`generateMetadata`
+:
+
+```ts
+
+export
+ 
+async
+ 
+function
+ 
+generateMetadata({ params }): Promise<Metadata> {
+
+const
+ 
+article =
+ 
+await
+
+getPublic<ArticleDetail>(
+`/api/v1/articles/
+${
+params.slug
+}
+/`
+);
+
+return
+ 
+{
+
+title: article.seo_title || article.title,
+
+description: article.seo_description || art
+icle.excerpt,
+
+openGraph: {
+
+title: article.og_title || article.title,
+
+description: article.og_description,
+
+images: [article.resolved_og_image],
+
+type:
+ 
+"article"
+,
+
+publishedTime: article.published_at ??
+ 
+undefined
+,
+
+},
+
+t
+witter: { card:
+ 
+"summary_large_image"
+ 
+},
+
+alternates: { canonical: article.canonical_url },
+
+};
+
+}
+
+```
+
+**OG image minimum:**
+ 
+1200×630px
+ 
+—
+ 
+enforce this when accepting uploads in the
+
+CMS.
+
+**JSON
+-
+LD NewsArticle**
+ 
+—
+ 
+add to article detail page:
+
+```tsx
+
+<
+script
+
+type
+=
+"application/ld+json"
+
+dangerouslySetInnerHTML
+=
+{
+{
+
+__html: JSON.stringify({
+
+"@context"
+:
+ 
+"https://schema.org"
+,
+
+"@type"
+:
+ 
+"NewsArticle"
+,
+
+"headline"
+"image"
+: [article.resolved_og_image],
+
+"datePublished"
+: article.published_at,
+
+"dateModified"
+: article.updated_at,
+
+"author"
+: {
+ 
+"@type"
+:
+ 
+"Person"
+,
+ 
+"name"
+: article.author_name },
+
+}),
+
+}
+}
+
+/>
+
+```
+
+**WhatsApp preview**
+ 
+requires
+ 
+`og:image`
+ 
+rendered server
+-
+side
+ 
+—
+ 
+Next.js App
+
+Router do
+es this automatically via
+ 
+`generateMetadata`
+.
+
+---
+
+## 14. Advertising Integration
+
+### 14.1 Fetch zone data (server component)
+
+```ts
+
+const
+ 
+zone =
+ 
+await
+ 
+getPublic<AdZone>(
+"/api/v1/ads/zones/homepage
+-
+leaderboard/"
+);
+
+// Zone results are cached 60s on the backend
+ 
+—
+ 
+short ISR on the frontend is fine
+
+```
+
+### 14.2
+ 
+`<AdSlot>`
+ 
+client component
+
+```tsx
+
+"use client"
+;
+
+import
+ 
+{ useEffect }
+ 
+from
+ 
+"react"
+;
+
+export
+ 
+function
+ 
+AdSlot({ campaign }: { campaign: AdCampaign }) {
+
+useE
+ffect(()
+ 
+=>
+ 
+{
+
+// Fire impression when visible (use IntersectionObserver in production)
+
+fetch(
+
+`
+${
+process.env.NEXT_PUBLIC_API_BASE_URL
+}${
+campaign.impression_tracking_url
+}
+
+`
+,
+
+{ method:
+ 
+"POST"
+ 
+}
+
+);
+
+}, [campaign.impression_tracking_url]);
+
+async
+ 
+function
+ 
+handleClick() {
+
+const
+ 
+res =
+ 
+await
+ 
+fetch(
+
+`
+${
+process.env.NEXT_PUBLIC_API_BASE_URL
+}${
+campaign.click_tracking_url
+}
+`
+,
+
+{ method:
+ 
+"POST"
+ 
+}
+
+);
+
+const
+if
+ 
+(data.redirect_url) window.open(data.redirect_url,
+ 
+"_blank"
+,
+ 
+"noopener"
+);
+
+}
+
+return
+ 
+(
+
+<
+a
+ 
+onClick
+=
+{
+handleClick
+}
+ 
+style
+=
+{
+{ cursor:
+ 
+"pointer"
+ 
+}
+}
+>
+
+<
+img
+ 
+src
+=
+{
+campaign.creative_url
+}
+ 
+alt
+=
+{
+campaign.name
+}
+ 
+/>
+
+</
+a
+>
+
+);
+
+}
+
+```
+
+**Rules:**
+
+-
+ 
+Tracking URLs in the zone response are relative paths
+ 
+—
+ 
+prepend
+
+`NEXT_PUBLIC_API_BASE_URL`
+.
+
+-
+ 
+Never expose the raw
+ 
+`click_url`
+ 
+directly
+ 
+—
+ 
+always go through the tracking
+
+endpoint first.
+
+-
+ 
+Staff impressions are not counted by the backend.
+
+---
+
+## 15. Push
+ 
+Notifications
+
+```ts
+
+// 1. Get VAPID public key
+
+GET /api/v1/notifications/vapid
+-
+public
+-
+key/
+
+// Returns 503 if push is not configured
+
+// 2. Subscribe browser
+
+const
+ 
+reg =
+ 
+await
+ 
+navigator.serviceWorker.ready;
+
+const
+ 
+sub =
+ 
+await
+ 
+reg.pushManager.subscribe({
+
+userVisibleOnly:
+ 
+true
+,
+
+applicationServerKey: vapidKey,
+
+});
+
+// 3. Send to backend
+
+POST /api/v1/notifications/subscribe/
+
+{
+
+"endpoint"
+: sub.endpoint,
+
+"p256dh"
+: base64encode(sub.getKey(
+"p256dh"
+)),
+
+"auth"
+: base64encode(sub.getKey(
+"auth"
+)),
+
+"user_agent"
+: navigator.userAgent
+
+}
+
+// 4. Unsubscribe
+
+POST /api/v1/notifications/unsubscribe/
+```
+
+Put the permission flow behind a user action (button click)
+ 
+—
+ 
+browsers block
+
+auto
+-
+prompts.
+
+---
+
+## 16. Build Order
+
+### Phase 1
+ 
+—
+ 
+Foundation
+
+-
+ 
+[ ] Pro
+ject scaffold + env vars
+
+-
+ 
+[ ] API client layer (
+`public.ts`
+,
+ 
+`reader.ts`
+,
+ 
+`staff.ts`
+, error handler)
+
+-
+ 
+[ ] TypeScript types (
+`types.ts`
+)
+
+-
+ 
+[ ] Site layout:
+ 
+`<Header>`
+,
+ 
+`<NavBar>`
+ 
+(sections),
+ 
+`<Footer>`
+
+### Phase 2
+ 
+—
+ 
+Public Site
+
+-
+ 
+[ ] Homepage: breaking banner, top stories grid, featured row, latest feed
+
+-
+ 
+[ ] Article detail: server fetch, OG meta, JSON
+-
+LD, analytics tracker
+
+-
+ 
+[ ] Category pages
+
+-
+ 
+[ ] Tag pages
+
+-
+ 
+[ ] Section pages
+
+-
+ 
+[ ] Author list + author detail
+
+-
+ 
+[ ] Search page
+ 
+with highlight rendering
+
+-
+ 
+[ ] Newsletter signup form
+
+### Phase 3
+ 
+—
+ 
+Reader Auth & Account
+
+-
+ 
+[ ] Reader register + email verification flow
+
+-
+ 
+[ ] Reader login / logout Route Handlers + cookies
+
+-
+ 
+[ ] Account profile page + edit form
+
+-
+ 
+[ ] Bookmarks page +
+ 
+`
+<BookmarkButton>`
+
+-
+ 
+[ ] Reading history page
+
+### Phase 4
+ 
+—
+ 
+Subscriptions
+
+-
+ 
+[ ] Plan listing page (
+`/subscribe`
+)
+
+-
+ 
+[ ] Subscribe form (payment method selector)
+
+-
+ 
+[ ] Paynow poll loop
+
+-
+ 
+[ ] Reader subscription status page
+
+-
+ 
+[ ] Payment history
+
+### Phase
+ 
+5
+ 
+—
+ 
+Advertising
+
+-
+ 
+[ ]
+ 
+`<AdSlot>`
+ 
+component with impression tracking
+
+-
+ 
+[ ] Click tracking + redirect
+
+-
+ 
+[ ] Zone slots on homepage, article detail
+
+### Phase 6
+-
+ 
+[ ] CMS login + cookie session + middleware guard
+
+-
+ 
+[ ] CMS dashboard (headline stats)
+
+-
+ 
+[ ] Article list (filter by status)
+
+-
+ 
+[ ] Article create/edit form with
+ 
+`<ArticleEditor>`
+
+-
+ 
+[ ] Media library + upload
+
+-
+ 
+[ ] Comment moderation queue
+
+-
+ 
+[ ] Newsletter subscriber list
+
+-
+ 
+[ ] Advertising dashboard (campaig
+ns + advertisers + reports)
+
+-
+ 
+[ ] Subscription revenue view
+
+-
+ 
+[ ] Staff management
+
+### Phase 7
+ 
+—
+ 
+Polish
+
+-
+ 
+[ ] Push notification subscription flow
+
+-
+ 
+[ ] ISR tuning (
+`revalidate`
+ 
+values per page type)
+
+-
+ 
+[ ] Error boundaries + fallback UIs for API failures
+
+-
+ 
+[ ] Rate
+-
+limit UI feedback (
+`retry_after_seconds`
+)
+
+-
+ 
+[ ] Accessibility audit
+
+-
+ 
+[ ] Lighthouse / Core Web Vitals pass
+
+---
+
+## 17. Deployment Checklist
+
+-
+ 
+[ ] All env vars set in Vercel project settings
+
+-
+ 
+[ ]
+ 
+`API_BASE_URL`
+ 
+points to production Django
+ 
+URL (no trailing slash)
+
+-
+ 
+[ ]
+ 
+`NEXT_PUBLIC_SITE_URL`
+ 
+matches production domain
+
+-
+ 
+[ ]
+ 
+`CORS_ALLOWED_ORIGINS`
+ 
+on backend includes production frontend URL
+
+-
+ 
+[ ] Cookie
+ 
+`secure: true`
+ 
+in production Route Handlers
+
+-
+ 
+[ ] OG images confirmed ≥1200×630px
+
+-
+ 
+[ ]
+ 
+`generateMetadata`
+ 
+on every public page
+
+-
+ 
+[ ] JSON
+-
+LD on article detail pages
+
+-
+ 
+[ ]
+ 
+`robots.txt`
+ 
+not blocking crawlers
+
+-
+ 
+[ ] Sitemap links to
+ 
+`/sitemap.xml`
+ 
+and
+ 
+`/feed/`
+ 
+working from backend
+
+-
+ 
+[ ] WhatsApp share preview tested (
+`og:image`
+ 
+resolves publicly)
+
+-
+ 
+[ ] Paynow polling tested end
+-
+to
+-
+end in staging
+
+-
+ 
+[ ] Ad impression/click tracking verified (not double
+-
+counting)
+
+-
+ 
+[ ] Staff login smoke test: correct role shown, CMS accessible
+
+-
+ 
+[ ] Reader login smoke test: bookmarks and history wor
+king
+
+---
+
+## Source of Truth Order
+
+When API behavior is unclear:
+1.
+ 
+`http://127.0.0.1:8000/api/docs/`
+ 
+—
+ 
+Swagger (live)
+
+2.
+ 
+`http://127.0.0.1:8000/api/schema/`
+ 
+—
+ 
+OpenAPI JSON
+
+3.
+ 
+`postman/TheGraniteAPI.postman_collection.json`
+
+4.
+ 
+`docs/NEXTJS_FRONTEND_
+GUIDE.md`
+ 
+—
+ 
+endpoint reference
+
+5.
+ 
+`docs/ADVERTISING_FRONTEND_GUIDE.md`
+ 
+—
+ 
+ad
+-
+specific contract
+

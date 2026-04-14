@@ -2,9 +2,9 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import API_Caller from '@/src/api_caller';
+import API_Caller from '@src/api_caller';
+import { getUser } from '@src/auth';
 
 interface Article {
   id: string;
