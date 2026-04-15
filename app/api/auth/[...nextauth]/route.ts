@@ -41,7 +41,7 @@ const handler = NextAuth({
     strategy: 'jwt'
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.role = user.role;
         token.subscription = user.subscription;
