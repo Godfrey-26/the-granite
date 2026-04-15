@@ -48,8 +48,8 @@ const handler = NextAuth({
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token) {
+    async session({ session, token }: any) {
+      if (token && token.sub) {
         session.user.id = token.sub;
         session.user.role = token.role;
         session.user.subscription = token.subscription;
