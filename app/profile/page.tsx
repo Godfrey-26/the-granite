@@ -36,15 +36,15 @@ export default function ProfilePage() {
         <div className="space-y-3 text-gray-700">
           <p>
             <span className="font-semibold">Name:</span>{' '}
-            {user?.name || user?.email || 'Unknown'}
+            {user?.name && typeof user.name === 'string' ? user.name : user?.email && typeof user.email === 'string' ? user.email : 'Unknown'}
           </p>
           <p>
             <span className="font-semibold">Email:</span>{' '}
-            {user?.email || 'Not provided'}
+            {user?.email && typeof user.email === 'string' ? user.email : 'Not provided'}
           </p>
           <p>
             <span className="font-semibold">Role:</span>{' '}
-            {user?.role || 'reader'}
+            {user?.role && typeof user.role === 'string' ? user.role : 'reader'}
           </p>
           <p>
             <span className="font-semibold">Token stored:</span>{' '}
