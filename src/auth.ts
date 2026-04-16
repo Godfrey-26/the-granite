@@ -1,3 +1,13 @@
+export interface JwtPayload {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  exp?: number;
+  iat?: number;
+  [key: string]: unknown;
+}
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("authToken");
@@ -14,7 +24,7 @@ export function clearToken() {
   localStorage.removeItem("authSearchHistory");
 }
 
-export function parseJwt(token?: string | null): Record<string, unknown> | null {
+export function parseJwt(token?: string | null): JwtPayload | null {
   if (!token) return null;
   try {
     const base64Url = token.split(".")[1];
@@ -25,13 +35,13 @@ export function parseJwt(token?: string | null): Record<string, unknown> | null 
         .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
         .join("")
     );
-    return JSON.parse(jsonPayload);
+    return JSON.parse(jsonPayload) as JwtPayload;
   } catch {
     return null;
   }
 }
 
-export function getUser() {
+export function getUser(): JwtPayload | null {
   const token = getToken();
   return parseJwt(token);
 }
