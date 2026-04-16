@@ -3,8 +3,8 @@ export function getToken(): string | null {
   return localStorage.getItem("authToken");
 }
 
-export function saveToken(token: string) {
-  if (typeof window === "undefined") return;
+export function saveToken(token: string | null) {
+  if (typeof window === "undefined" || !token) return;
   localStorage.setItem("authToken", token);
 }
 
@@ -14,7 +14,7 @@ export function clearToken() {
   localStorage.removeItem("authSearchHistory");
 }
 
-export function parseJwt(token?: string): Record<string, unknown> | null {
+export function parseJwt(token?: string | null): Record<string, unknown> | null {
   if (!token) return null;
   try {
     const base64Url = token.split(".")[1];
