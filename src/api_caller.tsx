@@ -9,7 +9,7 @@ import { getToken } from '@src/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/v1';
 
-export default async function API_Caller(method, headers, mapping, body) {
+export default async function API_Caller(method: string, headers: any, mapping: string, body: any) {
   try {
     const authToken = getToken();
     const requestHeaders = {
