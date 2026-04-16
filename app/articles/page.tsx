@@ -18,7 +18,7 @@ export default function ArticlesPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    API_Caller('GET', null, '/articles')
+    API_Caller('GET', null, '/articles', null)
       .then((res) => {
         setArticles(res.articles || []);
       })

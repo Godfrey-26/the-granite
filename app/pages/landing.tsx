@@ -16,21 +16,23 @@ function truncate(text: string, limit: number){
 }
 export default function LandingPage()
 {
-   const [topStories, setTopStories] = useState([])
+   const [topStories, setTopStories] = useState<any[]>([])
    const [loading, setLoading] = useState(true)
-   const [error, setError] = useState(null)
+   const [error, setError] = useState<any>(null)
    // call the api
    /**
     * Get the top stories
     * */
    useEffect(()=>{
-      API_Caller('GET', null, '/articles/top-stories/')
-      .then(data=>{
+      API_Caller('GET', null, '/articles/top-stories/', null)
+      .then((data: any)=>{
          console.log(data)
-         setTopStories(data)
+         // Handle API response - data might be an array or wrapped in an object
+         const articles = Array.isArray(data) ? data : data?.articles || data?.data || []
+         setTopStories(articles)
          setLoading(false)
       })
-      .catch(err =>{
+      .catch((err: any) =>{
          setError(err.message)
          setLoading(false)
       } )
@@ -166,8 +168,8 @@ export default function LandingPage()
              <div className="">
                   <div className="px-3 pt-6">
                       <h2 className="text-xl">Top Stories</h2>
-                      {topStories.map((item)=>(
-                         <div>Check this {item.article.title}</div>
+                      {topStories.map((item: any)=>(
+                         <div key={item.id}>{item.title}</div>
                        ))}
                   </div>
                   <div className="grouped-grid-arrangement">

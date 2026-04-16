@@ -20,7 +20,7 @@ interface Article {
 
 export default function ArticlePage() {
   const params = useParams();
-  const { data: session } = useSession();
+  const [user, setUser] = useState<any | null>(null);
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -28,21 +28,24 @@ export default function ArticlePage() {
   useEffect(() => {
     if (params.id) {
       fetchArticle(params.id as string);
+      // Fetch user on mount
+      const currentUser = getUser();
+      setUser(currentUser);
     }
   }, [params.id]);
 
   useEffect(() => {
     if (article) {
       const access = !article.premium || 
-        (session?.user?.subscription?.status === 'active') || 
-        (session?.user?.role === 'admin');
+        (user?.subscription?.status === 'active') || 
+        (user?.role === 'admin');
       setHasAccess(access);
     }
-  }, [article, session]);
+  }, [article, user]);
 
   const fetchArticle = async (id: string) => {
     try {
-      const res = await API_Caller('GET', null, `/articles/${id}`);
+      const res = await API_Caller('GET', null, `/articles/${id}`, null);
       setArticle(res.article);
     } catch (error) {
       console.error('Failed to fetch article:', error);
@@ -92,7 +95,7 @@ export default function ArticlePage() {
             <p className="text-gray-600 mb-6">
               This article requires a premium subscription to read.
             </p>
-            {session ? (
+            {user ? (
               <Link
                 href="/subscribe"
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"

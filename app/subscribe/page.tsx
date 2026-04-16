@@ -36,14 +36,14 @@ export default function SubscribePage() {
 
   const fetchData = async () => {
     try {
-      const plansResponse = await API_Caller('GET', null, '/subscriptions/plans/');
+      const plansResponse = await API_Caller('GET', null, '/subscriptions/plans/', null);
       setPlans(plansResponse.plans || plansResponse || []);
     } catch (fetchError) {
       console.error('Failed to load plans:', fetchError);
     }
 
     try {
-      const subscriptionResponse = await API_Caller('GET', null, '/subscriptions/my-subscription/');
+      const subscriptionResponse = await API_Caller('GET', null, '/subscriptions/my-subscription/', null);
       setSubscription(subscriptionResponse.subscription || subscriptionResponse || null);
     } catch {
       setSubscription(null);
@@ -68,7 +68,7 @@ export default function SubscribePage() {
         delete payload.phone_number;
       }
 
-      const response = await API_Caller('POST', '/subscriptions/subscribe/', payload);
+      const response = await API_Caller('POST', null, '/subscriptions/subscribe/', payload);
 
       if (response.redirect_url) {
         window.location.href = response.redirect_url;

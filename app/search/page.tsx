@@ -28,7 +28,7 @@ export default function SearchPage() {
 
   const fetchSearchResults = async (searchQuery: string) => {
     try {
-      const res = await API_Caller('GET', null, `/articles/search?q=${encodeURIComponent(searchQuery)}`);
+      const res = await API_Caller('GET', null, `/articles/search?q=${encodeURIComponent(searchQuery)}`, null);
       setArticles(res.articles || []);
     } catch (error) {
       console.error('Search failed:', error);
