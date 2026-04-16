@@ -5,8 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clearToken, getToken, getUser } from '@src/auth';
 
+interface User {
+  name?: string;
+  email?: string;
+  role?: string;
+  subscription?: { status: string };
+}
+
 export default function ProfilePage() {
-  const [user, setUser] = useState<Record<string, unknown> | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
