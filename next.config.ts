@@ -1,17 +1,21 @@
-import type { NextConfig } from "next";
-
 const nextConfig: NextConfig = {
-  /* config options here */
   trailingSlash: true,
-  async rewrites(){
-
-    return[
+  images: {
+    remotePatterns: [
       {
-        source: '/api/:path*',
-        destination: 'https://api.thegranite.co.zw/api/:path*',
-      }
+        protocol: 'https',
+        hostname: 'api.thegranite.co.zw',
+      },
+    ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: 'https://api.thegranite.co.zw/api/v1/:path*/',
+      },
     ]
-  }
-};
+  },
+}
 
 export default nextConfig;

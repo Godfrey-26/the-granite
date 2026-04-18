@@ -7,29 +7,41 @@ body -> optional request payload
 
 import { getToken } from '@src/auth';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api/v1';
-
 export default async function API_Caller(method: string, headers: any, mapping: string, body: any) {
-  try {
-    const authToken = getToken();
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      ...(headers || {}),
-    };
+  const authToken = await getToken(); // safer if async
 
-    if (authToken && !requestHeaders.Authorization) {
-      requestHeaders.Authorization = `Bearer ${authToken}`;
-    }
+  const requestHeaders: any = {
+    'Content-Type': 'application/json',
+    ...(headers || {}),
+  };
 
-    const res = await fetch(`${API_BASE_URL}${mapping}`, {
-      method,
-      headers: requestHeaders,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    throw error;
+  if (authToken && !requestHeaders.Authorization) {
+    requestHeaders.Authorization = `Bearer ${authToken}`;
   }
+  
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}${mapping}`, {
+    method,
+    headers: requestHeaders,
+    body: body ? JSON.stringify(body) : undefined,
+    redirect: 'follow'
+  });
+
+  //  HANDLE NON-JSON RESPONSES
+  const contentType = res.headers.get("content-type");
+
+if (!contentType || !contentType.includes("application/json")) {
+  const text = await res.text();
+  console.error("NON-JSON RESPONSE:", text);
+  throw new Error("Server did not return JSON");
+}
+
+const data = await res.json();
+  //  HANDLE HTTP ERRORS
+  if (!res.ok) {
+    console.error("API error:", data);
+    throw new Error(data?.message || "API request failed");
+  }
+
+  return data;
 }
