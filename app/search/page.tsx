@@ -1,5 +1,4 @@
 'use client';
-
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -23,6 +22,8 @@ export default function SearchPage() {
   useEffect(() => {
     if (query) {
       fetchSearchResults(query);
+    } else {
+      setLoading(false);
     }
   }, [query]);
 
@@ -45,7 +46,6 @@ export default function SearchPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold mb-8">Search Results for "{query}"</h1>
-
       {articles.length === 0 ? (
         <p className="text-gray-500">No articles found for your search.</p>
       ) : (
